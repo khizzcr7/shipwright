@@ -1,0 +1,71 @@
+# Shipwright pipeline - one job per post-code DevSecOps lifecycle stage.
+# Every job runs the same stage engine that ships in this repository
+# (agent/run.js --stage <id>), so the pipeline history on GitLab shows the
+# automation actually running, stage by stage.
+image: node:24
+
+stages:
+  - plan
+  - create
+  - verify
+  - package
+  - secure
+  - release
+  - configure
+  - monitor
+  - govern
+  - report
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH
+
+plan:
+  stage: plan
+  script: node agent/run.js --stage plan --ci
+
+code_review:
+  stage: create
+  script: node agent/run.js --stage create --ci
+
+verify:
+  stage: verify
+  script: node agent/run.js --stage verify --ci
+
+package:
+  stage: package
+  script: node agent/run.js --stage package --ci
+  artifacts:
+    paths:
+      - dist/manifest.json
+    expire_in: 30 days
+
+security_scan:
+  stage: secure
+  script: node agent/run.js --stage secure --ci
+
+release_notes:
+  stage: release
+  script: node agent/run.js --stage release --ci
+
+configure:
+  stage: configure
+  script: node agent/run.js --stage configure --ci
+
+monitor:
+  stage: monitor
+  script: node agent/run.js --stage monitor --ci
+
+govern:
+  stage: govern
+  script: node agent/run.js --stage govern --ci
+
+delivery_report:
+  stage: report
+  script: node agent/run.js --ci
+  artifacts:
+    paths:
+      - reports/
+    expire_in: 30 days
